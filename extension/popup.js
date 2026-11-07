@@ -184,6 +184,20 @@ function renderBatches(batches) {
       setTimeout(() => { meta.textContent = b.repos.length + ' 个页面'; }, 2000);
     });
 
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'mini-btn';
+    closeBtn.textContent = '关闭';
+    closeBtn.title = '关掉当前开着的这批页面（按 URL 匹配）';
+    closeBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const ids = await matchTabIds(b.repos);
+      if (ids.length) await chrome.tabs.remove(ids);
+      meta.textContent = ids.length
+        ? '已关闭 ' + ids.length + ' 个页面'
+        : '这批页面当前都没开着';
+      setTimeout(() => { meta.textContent = b.repos.length + ' 个页面'; }, 2000);
+    });
+
     const del = document.createElement('button');
     del.className = 'mini-btn del';
     del.textContent = '×';
@@ -212,7 +226,7 @@ function renderBatches(batches) {
       else expandedIds.add(b.id);
       row.classList.toggle('open');
     });
-    head.append(caret, main, openBtn, del);
+    head.append(caret, main, openBtn, closeBtn, del);
 
     // ---- 展开的页面清单：每条可单独打开 ----
     const pages = document.createElement('div');
@@ -248,18 +262,25 @@ $('closeAfterSave').addEventListener('change', async (e) => {
   await chrome.storage.local.set({ [CLOSE_KEY]: e.target.checked });
 });
 
-// 收藏后关闭刚收藏的那些标签页（按原始 URL 匹配，同一 URL 的多个标签都关）
-async function closeCollectedTabs(repos) {
+// 按原始 URL 匹配当前开着的标签（www/hash 归一；同一 URL 的多个标签都在内）
+function matchTabIds(repos) {
   const keep = new Set(repos);
-  const tabs = await chrome.tabs.query({});
-  const ids = [];
-  for (const t of tabs) {
-    let u;
-    try { u = new URL(t.url); } catch { continue; }
-    const host = u.hostname.toLowerCase();
-    if (host !== 'github.com' && host !== 'www.github.com') continue;
-    if (keep.has('https://github.com' + u.pathname + (u.search || ''))) ids.push(t.id);
-  }
+  return chrome.tabs.query({}).then((tabs) => {
+    const ids = [];
+    for (const t of tabs) {
+      let u;
+      try { u = new URL(t.url); } catch { continue; }
+      const host = u.hostname.toLowerCase();
+      if (host !== 'github.com' && host !== 'www.github.com') continue;
+      if (keep.has('https://github.com' + u.pathname + (u.search || ''))) ids.push(t.id);
+    }
+    return ids;
+  });
+}
+
+// 收藏后关闭刚收藏的那些标签页
+async function closeCollectedTabs(repos) {
+  const ids = await matchTabIds(repos);
   if (ids.length) await chrome.tabs.remove(ids);
   return ids.length;
 }

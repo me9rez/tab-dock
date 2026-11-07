@@ -355,30 +355,30 @@
   </footer>
 
   <script>
-// ===== 预览 mock（480px 版） =====
+// ===== 预览 mock：「打开 / 关闭 / ×」三个动作全可点 =====
 const MOCK_BATCHES = [
   { id: 3, name: '11-07 10:55', at: Date.now(), repos: [
       'https://github.com/Fei2411/DS-Bot/releases',
       'https://github.com/vercel-labs/scriptc/pull/42',
       'https://github.com/Niko1221/Strata/issues/12',
-      'https://github.com/egoist/mygo/blob/main/README.md',
-      'https://github.com/milind-soni/OpenMausBot?tab=readme-ov-file',
+      'https://github.com/egoist/mygo',
       'https://github.com/dsh-tauri/deepseek-harness-desktop',
   ]},
   { id: 2, name: '11-06 21:30', at: Date.now() - 86400000, repos: [
       'https://github.com/vercel-labs/scriptc',
       'https://github.com/module-federation/vite',
-      'https://github.com/ccch1mneyyy/dsh-Go',
   ]},
 ];
 const MOCK_TABS = [
   { id: 1, url: 'https://github.com/Fei2411/DS-Bot/releases' },
   { id: 2, url: 'https://github.com/vercel-labs/scriptc/pull/42' },
+  { id: 3, url: 'https://github.com/egoist/mygo' },
+  { id: 9, url: 'https://github.com/feed' },   // 不属于任何批次，关闭动作不应碰它
 ];
 window.chrome = {
   runtime: { sendMessage: (msg, cb) => cb({
     connected: true, wsUrl: 'ws://127.0.0.1:17890/ws', browser: 'edge',
-    tabCount: 16, windowCount: 1, extVersion: '1.0.0'
+    tabCount: MOCK_TABS.length, windowCount: 1, extVersion: '1.0.0'
   })},
   storage: { local: {
     _d: { batches: MOCK_BATCHES, closeAfterSave: false },
@@ -391,7 +391,7 @@ window.chrome = {
     remove: (ids) => {
       for (const id of [].concat(ids)) {
         const i = MOCK_TABS.findIndex((t) => t.id === id);
-        if (i >= 0) MOCK_TABS.splice(i, 1);
+        if (i >= 0) { console.log('[mock] 关闭:', MOCK_TABS[i].url); MOCK_TABS.splice(i, 1); }
       }
     },
   },

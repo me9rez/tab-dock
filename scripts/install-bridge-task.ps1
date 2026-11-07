@@ -1,6 +1,7 @@
 <#
 .SYNOPSIS
-    把 TabBridge 桥注册成登录后自动运行的计划任务（可在开机后无窗口常驻）。
+    把 TabDock 桥注册成登录后自动运行的计划任务（可在开机后无窗口常驻）。
+    注：计划任务名沿用 TabBridge（历史部署标识），改名会导致重复任务。
 
 .DESCRIPTION
     计划任务以「当前用户 + 交互会话」运行，这样桥能看到的只是本机回环端口，
@@ -119,7 +120,7 @@ $settings = New-ScheduledTaskSettingsSet `
 # （默认列表看不见，要勾“显示隐藏的任务”），而它并不能隐藏 node 的控制台窗口
 # —— 窗口问题由 wscript + start-bridge-hidden.vbs 解决。
 
-$desc = "TabBridge：把浏览器标签页桥接给本地 agent（127.0.0.1:$Port）"
+$desc = "TabDock：标签页桥 + GitHub 批次收藏（127.0.0.1:$Port）"
 
 Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $triggers `
     -Principal $principal -Settings $settings -Description $desc | Out-Null

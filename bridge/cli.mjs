@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * TabBridge CLI — 给人快速看一眼用的极薄封装（agent 直接用 curl 也行）
+ * TabDock CLI — 给人快速看一眼用的极薄封装（agent 直接用 curl 也行）
  *
  *   node cli.mjs health
  *   node cli.mjs tabs            # 表格

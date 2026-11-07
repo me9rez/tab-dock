@@ -1,5 +1,5 @@
 /**
- * TabBridge — MV3 service worker
+ * TabDock — MV3 service worker
  *
  * 职责：
  *  1. 作为 WebSocket 客户端连到本机桥（ws://127.0.0.1:17890/ws）
@@ -285,9 +285,9 @@ chrome.runtime.onInstalled.addListener(() => { connect(); pushNow(); });
 
 // 兜底：每分钟检查一次连接（SW 被回收后不会自动重连）
 if (chrome.alarms) {
-  chrome.alarms.create('tabbridge-keepalive', { periodInMinutes: 1 });
+  chrome.alarms.create('tabdock-keepalive', { periodInMinutes: 1 });
   chrome.alarms.onAlarm.addListener((alarm) => {
-    if (alarm.name !== 'tabbridge-keepalive') return;
+    if (alarm.name !== 'tabdock-keepalive') return;
     if (!connected) connect();
     else schedulePush(0);
   });

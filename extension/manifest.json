@@ -1,14 +1,14 @@
 {
   "manifest_version": 3,
-  "name": "TabBridge",
+  "name": "TabDock",
   "version": "1.0.0",
-  "description": "把浏览器标签页信息桥接给本地 agent：WebSocket 连本机 127.0.0.1:17890，外部只需 HTTP 读取。",
+  "description": "标签页的码头：把标签页桥接给本地 agent（HTTP 读取/控制），GitHub 仓库可成批收藏、一键恢复或关闭。",
   "permissions": ["tabs", "storage", "alarms"],
   "background": {
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "TabBridge",
+    "default_title": "TabDock",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",

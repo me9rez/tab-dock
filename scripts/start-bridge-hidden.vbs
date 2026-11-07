@@ -1,4 +1,4 @@
-' TabBridge 隐藏启动器
+' TabDock 隐藏启动器（计划任务沿用 TabBridge 名）
 ' ---------------------------------------------------------------
 ' 由计划任务调用：wscript.exe start-bridge-hidden.vbs <node.exe> <server.mjs> <port>
 '

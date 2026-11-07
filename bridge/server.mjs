@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 /**
- * TabBridge 本地桥
+ * TabDock 本地桥
  * =================
  * 浏览器扩展作为 WebSocket 客户端连进来推送标签页快照；外部 agent 用普通
  * HTTP 读出去。零依赖（只用 node:http / node:crypto）。
  *
  *   node server.mjs
  *   node server.mjs --port 17890 --host 127.0.0.1
+ *
+ * 注：对外契约（TABBRIDGE_* 环境变量、X-TabBridge-Token 请求头）沿用历史命名，保持兼容。
  *
  * HTTP API
  * --------
@@ -554,7 +556,7 @@ function log(...args) {
 }
 
 server.listen(PORT, HOST, () => {
-  log(`TabBridge 桥已启动  http://${HOST}:${PORT}`);
+  log(`TabDock 桥已启动  http://${HOST}:${PORT}`);
   log(`  扩展连接地址: ws://${HOST}:${PORT}${WS_PATH}`);
   log(`  对外接口:     GET http://${HOST}:${PORT}/tabs`);
   if (TOKEN) log('  已启用 token 校验');

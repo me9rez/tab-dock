@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""生成 TabBridge 的扩展图标（纯标准库写 PNG，无 Pillow 依赖）。
+"""生成 TabDock 的扩展图标（纯标准库写 PNG，无 Pillow 依赖）。
 
 设计：紫色圆角底 + 三个白色标签条，最上面一条高亮（代表当前标签）。
 """

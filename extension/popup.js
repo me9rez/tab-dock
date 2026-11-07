@@ -1,4 +1,4 @@
-/* TabBridge popup */
+/* TabDock popup */
 function $(id) {
   return document.getElementById(id);
 }

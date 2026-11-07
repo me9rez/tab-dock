@@ -31,12 +31,12 @@
     * { box-sizing: border-box; }
 
     body {
-      width: 360px;
+      width: 480px;
       margin: 0;
-      padding: 14px 16px 12px;
+      padding: 16px 18px 14px;
       background: var(--bg);
       color: var(--fg);
-      font: 13px/1.45 system-ui, "Segoe UI", "Microsoft YaHei UI", sans-serif;
+      font: 13.5px/1.5 system-ui, "Segoe UI", "Microsoft YaHei UI", sans-serif;
       -webkit-font-smoothing: antialiased;
     }
 
@@ -50,14 +50,14 @@
     }
     header h1 {
       margin: 0;
-      font-size: 12.5px;
+      font-size: 13px;
       font-weight: 650;
       letter-spacing: .1px;
       color: var(--fg);
     }
     #conn {
       margin-left: auto;
-      font-size: 12px;
+      font-size: 12.5px;
       color: var(--muted);
     }
     #conn.on { color: var(--ok); }
@@ -81,23 +81,23 @@
     /* ---- 数据区：纯排版，不用卡片 ---- */
     dl {
       margin: 0;
-      padding: 9px 0;
+      padding: 10px 0;
     }
     dl > div {
       display: flex;
       align-items: baseline;
       justify-content: space-between;
       gap: 12px;
-      padding: 5.5px 0;
+      padding: 6px 0;
     }
-    dt { color: var(--muted); font-size: 12px; }
+    dt { color: var(--muted); font-size: 12.5px; }
     dd {
       margin: 0;
       font-variant-numeric: tabular-nums;
       text-align: right;
     }
     dd code {
-      font: 11.5px/1.4 ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font: 12px/1.4 ui-monospace, "Cascadia Mono", Consolas, monospace;
       color: var(--muted);
     }
 
@@ -111,7 +111,7 @@
     dl .pick:hover { background: var(--hover); }
     .copied-ok {
       display: none;
-      font-size: 10.5px;
+      font-size: 11px;
       color: var(--ok);
       margin-left: 6px;
     }
@@ -128,7 +128,7 @@
       justify-content: space-between;
     }
     .sec-title {
-      font-size: 11px;
+      font-size: 11.5px;
       color: var(--faint);
       letter-spacing: .5px;
     }
@@ -137,9 +137,9 @@
       background: none;
       color: var(--muted);
       font: inherit;
-      font-size: 11.5px;
+      font-size: 12px;
       cursor: pointer;
-      padding: 2px 6px;
+      padding: 2.5px 7px;
       border-radius: 4px;
     }
     .mini-btn:hover { color: var(--fg); background: var(--hover); }
@@ -151,7 +151,7 @@
       margin-right: 8px;
       cursor: pointer;
       color: var(--muted);
-      font-size: 11.5px;
+      font-size: 12px;
       user-select: none;
     }
     .opt:hover { color: var(--fg); }
@@ -188,7 +188,7 @@
     ::-webkit-scrollbar-thumb:hover { background: var(--faint); background-clip: padding-box; }
     ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
     #batchList {
-      max-height: 216px;   /* 约 4 行，多了滚动 */
+      max-height: 320px;   /* 约 6 行，多了滚动 */
       overflow-y: auto;
       margin-top: 2px;
     }
@@ -213,8 +213,8 @@
     }
     .batch-row.open .caret { transform: rotate(90deg); }
     .b-main { flex: 1; min-width: 0; }
-    .b-name { font-size: 12.5px; font-variant-numeric: tabular-nums; }
-    .b-meta { font-size: 10.5px; color: var(--faint); }
+    .b-name { font-size: 13px; font-variant-numeric: tabular-nums; }
+    .b-meta { font-size: 11px; color: var(--faint); }
     .batch-row .mini-btn { flex: none; }
     .batch-row .del { opacity: 0; font-size: 13px; line-height: 1.4; padding: 2px 5px; }
     .batch-row:hover .del { opacity: 1; }
@@ -222,11 +222,11 @@
     .mini-btn.danger:hover { color: var(--bad); background: var(--hover); }
     .page-list {
       display: none;
-      margin: 4px 0 2px 24px;   /* 与批次名对齐 */
+      margin: 4px 0 2px 26px;   /* 与批次名对齐 */
     }
     .batch-row.open .page-list { display: block; }
     .page-item {
-      font: 11px/1.5 ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font: 11.5px/1.6 ui-monospace, "Cascadia Mono", Consolas, monospace;
       color: var(--muted);
       white-space: nowrap;
       overflow: hidden;
@@ -267,9 +267,9 @@
     }
     #copyline:hover { filter: brightness(.97); }
     @media (prefers-color-scheme: dark) { #copyline:hover { filter: brightness(1.18); } }
-    #copyline .prompt { color: var(--faint); font: 11.5px ui-monospace, Consolas, monospace; flex: none; }
+    #copyline .prompt { color: var(--faint); font: 12px ui-monospace, Consolas, monospace; flex: none; }
     #cmd {
-      font: 11.5px/1.4 ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font: 12px/1.4 ui-monospace, "Cascadia Mono", Consolas, monospace;
       color: var(--fg);
       white-space: nowrap;
       overflow: hidden;
@@ -277,7 +277,7 @@
     }
     #copyline .done {
       flex: none;
-      font-size: 10.5px;
+      font-size: 11px;
       color: var(--ok);
       display: none;
     }
@@ -290,7 +290,7 @@
       background: none;
       color: var(--muted);
       font: inherit;
-      font-size: 12px;
+      font-size: 12.5px;
       cursor: pointer;
       border-radius: 4px;
     }
@@ -298,7 +298,7 @@
 
     .err {
       color: var(--bad);
-      font-size: 11.5px;
+      font-size: 12px;
       padding-top: 6px;
       word-break: break-all;
       display: none;
@@ -355,7 +355,7 @@
   </footer>
 
   <script>
-// ===== 预览 mock：展开清单 / 打开按钮 / 确认删除 全部可点 =====
+// ===== 预览 mock（480px 版） =====
 const MOCK_BATCHES = [
   { id: 3, name: '11-07 10:55', at: Date.now(), repos: [
       'https://github.com/Fei2411/DS-Bot/releases',
@@ -369,9 +369,6 @@ const MOCK_BATCHES = [
       'https://github.com/vercel-labs/scriptc',
       'https://github.com/module-federation/vite',
       'https://github.com/ccch1mneyyy/dsh-Go',
-  ]},
-  { id: 1, name: '11-05 09:12', at: Date.now() - 2*86400000, repos: [
-      'https://github.com/egoist/mygo',
   ]},
 ];
 const MOCK_TABS = [
@@ -390,11 +387,11 @@ window.chrome = {
   }},
   tabs: {
     query: async () => MOCK_TABS,
-    create: (o) => { MOCK_TABS.push({ id: Math.random(), url: o.url }); console.log('[mock] 新开:', o.url); },
+    create: (o) => { MOCK_TABS.push({ id: Math.random(), url: o.url }); },
     remove: (ids) => {
       for (const id of [].concat(ids)) {
         const i = MOCK_TABS.findIndex((t) => t.id === id);
-        if (i >= 0) { console.log('[mock] 关闭:', MOCK_TABS[i].url); MOCK_TABS.splice(i, 1); }
+        if (i >= 0) MOCK_TABS.splice(i, 1);
       }
     },
   },

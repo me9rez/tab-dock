@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <style>
+    :root {
+      --bg: #1b1a22;
+      --card: #26242f;
+      --fg: #ecebf2;
+      --muted: #9d99ad;
+      --ok: #43d17c;
+      --bad: #ff6b6b;
+      --accent: #8b7cf6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      width: 300px;
+      margin: 0;
+      padding: 14px;
+      background: var(--bg);
+      color: var(--fg);
+      font: 13px/1.5 "Segoe UI", "Microsoft YaHei UI", sans-serif;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: .2px;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 10px;
+      margin-bottom: 6px;
+      background: var(--card);
+      border-radius: 8px;
+    }
+    .row .k { color: var(--muted); }
+    .dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+      background: var(--bad);
+      box-shadow: 0 0 6px currentColor;
+      color: var(--bad);
+    }
+    .dot.on { background: var(--ok); color: var(--ok); }
+    code {
+      font: 12px/1.4 ui-monospace, Consolas, monospace;
+      color: var(--accent);
+      word-break: break-all;
+    }
+    .hint {
+      margin-top: 10px;
+      padding: 9px 10px;
+      background: var(--card);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .hint code { font-size: 11.5px; }
+    button {
+      width: 100%;
+      margin-top: 10px;
+      padding: 8px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:active { transform: translateY(1px); }
+    .err { color: var(--bad); font-size: 11.5px; margin-top: 4px; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <h1>TabBridge</h1>
+
+  <div class="row">
+    <span class="k">本地桥</span>
+    <span><span id="dot" class="dot"></span><span id="conn">检测中…</span></span>
+  </div>
+  <div class="row">
+    <span class="k">标签页 / 窗口</span>
+    <span id="counts">—</span>
+  </div>
+  <div class="row">
+    <span class="k">浏览器</span>
+    <span id="browser">—</span>
+  </div>
+  <div class="row">
+    <span class="k">桥地址</span>
+    <span><code id="wsurl">—</code></span>
+  </div>
+  <div id="err" class="err"></div>
+
+  <button id="reconnect">重新连接</button>
+
+  <div class="hint">
+    agent 读取：<br />
+    <code>curl 127.0.0.1:17890/tabs</code>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

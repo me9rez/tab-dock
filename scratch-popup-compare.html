@@ -1,18 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8">
-<style>
-  :root { color-scheme: light dark; }
-  * { box-sizing: border-box; }
-  body { margin: 0; padding: 28px 32px; font: 13px/1.5 system-ui, "Segoe UI", "Microsoft YaHei UI", sans-serif; }
-  h2 { font-size: 13px; font-weight: 600; margin: 0 0 16px; color: #888; }
-  .grid { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
-  .cell { width: 300px; }
-  .cell .tag { font-size: 11px; color: #999; margin: 0 0 6px 2px; }
-  .frame { border: 1px solid #0002; border-radius: 6px; overflow: hidden; }
-  
-    .pv-new {
+  <meta charset="utf-8" />
+  <style>
+    :root {
       color-scheme: light dark;
       --bg: #fbfafc;
       --fg: #1d1b23;
@@ -24,8 +15,8 @@
       --bad: #d64545;
       --hover: #f3f1f8;
     }
-    .pv-new.dark {
-      .pv-new {
+    @media (prefers-color-scheme: dark) {
+      :root {
         --bg: #17161c;
         --fg: #e9e7f0;
         --muted: #918da3;
@@ -39,7 +30,7 @@
     }
     * { box-sizing: border-box; }
 
-    .pv-new {
+    body {
       width: 296px;
       margin: 0;
       padding: 12px 14px 10px;
@@ -126,6 +117,64 @@
     }
     .pick.copied .copied-ok { display: inline; }
 
+    /* ---- 批次收藏 ---- */
+    #batchSec {
+      padding: 8px 0 2px;
+      border-top: 1px solid var(--line);
+    }
+    .sec-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .sec-title {
+      font-size: 11px;
+      color: var(--faint);
+      letter-spacing: .5px;
+    }
+    .mini-btn {
+      border: 0;
+      background: none;
+      color: var(--muted);
+      font: inherit;
+      font-size: 11.5px;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .mini-btn:hover { color: var(--fg); background: var(--hover); }
+    #batchList {
+      max-height: 126px;   /* 约 3 行，多了滚动 */
+      overflow-y: auto;
+      margin-top: 2px;
+    }
+    .batch-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 4px 6px;
+      margin: 0 -6px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .batch-row:hover { background: var(--hover); }
+    .b-name { font-size: 12px; font-variant-numeric: tabular-nums; }
+    .b-meta { font-size: 10.5px; color: var(--faint); }
+    .batch-row .del {
+      opacity: 0;          /* 悬停才出现，平时安静 */
+      padding: 0 5px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .batch-row:hover .del { opacity: 1; }
+    #batchEmpty {
+      font-size: 11px;
+      color: var(--faint);
+      padding: 6px 0 2px;
+      display: none;
+    }
+
     /* ---- 底部：curl 复制块 + 文字按钮 ---- */
     footer {
       display: flex;
@@ -147,7 +196,7 @@
       user-select: none;
     }
     #copyline:hover { filter: brightness(.97); }
-    .pv-new.dark { #copyline:hover { filter: brightness(1.18); } }
+    @media (prefers-color-scheme: dark) { #copyline:hover { filter: brightness(1.18); } }
     #copyline .prompt { color: var(--faint); font: 11.5px ui-monospace, Consolas, monospace; flex: none; }
     #cmd {
       font: 11.5px/1.4 ui-monospace, "Cascadia Mono", Consolas, monospace;
@@ -185,119 +234,42 @@
       display: none;
     }
     .err.show { display: block; }
-  
-</style>
+  </style>
 </head>
 <body>
-<h2>TabBridge popup — 新版（含「GitHub 项目」一键复制行）</h2>
-<div class="grid">
-  <div class="cell">
-    <div class="tag">亮色 · 已连接（「GitHub 项目 6 个」整行可点复制）</div>
-    <div class="frame"><div class="pv-new light">
-  <header>
-    <span id="dot" class="dot on"></span>
-    <h1>TabBridge</h1>
-    <span id="conn">已连接</span>
-  </header>
-
-  <dl>
-    <div>
-      <dt>标签页 / 窗口</dt>
-      <dd id="counts">15 / 1</dd>
-    </div>
-    <div id="copyrepos" class="pick" title="复制所有 GitHub 仓库 + 提示词，可直接粘贴给 agent">
-      <dt>GitHub 项目</dt>
-      <dd><span id="repoCount">6 个</span><span class="copied-ok">已复制</span></dd>
-    </div>
-    <div>
-      <dt>浏览器</dt>
-      <dd id="browser">edge</dd>
-    </div>
-    <div>
-      <dt>桥地址</dt>
-      <dd><code id="wsurl">ws://127.0.0.1:17890/ws</code></dd>
-    </div>
-  </dl>
-
-  <div id="err" class="err"></div>
-
-  <footer>
-    <span id="copyline" title="点击复制">
-      <span class="prompt">$</span><span id="cmd">curl 127.0.0.1:17890/tabs</span><span class="done">已复制</span>
-    </span>
-    <button id="reconnect">重新连接</button>
-  </footer>
-
-  <script src="popup.js"></script>
-</div></div>
-  </div>
-  <div class="cell">
-    <div class="tag">暗色 · 已连接</div>
-    <div class="frame"><div class="pv-new dark">
-  <header>
-    <span id="dot" class="dot on"></span>
-    <h1>TabBridge</h1>
-    <span id="conn">已连接</span>
-  </header>
-
-  <dl>
-    <div>
-      <dt>标签页 / 窗口</dt>
-      <dd id="counts">15 / 1</dd>
-    </div>
-    <div id="copyrepos" class="pick" title="复制所有 GitHub 仓库 + 提示词，可直接粘贴给 agent">
-      <dt>GitHub 项目</dt>
-      <dd><span id="repoCount">6 个</span><span class="copied-ok">已复制</span></dd>
-    </div>
-    <div>
-      <dt>浏览器</dt>
-      <dd id="browser">edge</dd>
-    </div>
-    <div>
-      <dt>桥地址</dt>
-      <dd><code id="wsurl">ws://127.0.0.1:17890/ws</code></dd>
-    </div>
-  </dl>
-
-  <div id="err" class="err"></div>
-
-  <footer>
-    <span id="copyline" title="点击复制">
-      <span class="prompt">$</span><span id="cmd">curl 127.0.0.1:17890/tabs</span><span class="done">已复制</span>
-    </span>
-    <button id="reconnect">重新连接</button>
-  </footer>
-
-  <script src="popup.js"></script>
-</div></div>
-  </div>
-  <div class="cell">
-    <div class="tag">暗色 · 未连接（GitHub 行照常可用，数据来自浏览器本身）</div>
-    <div class="frame"><div class="pv-new dark">
   <header>
     <span id="dot" class="dot"></span>
     <h1>TabBridge</h1>
-    <span id="conn">未连接</span>
+    <span id="conn">检测中…</span>
   </header>
 
   <dl>
     <div>
       <dt>标签页 / 窗口</dt>
-      <dd id="counts">15 / 1</dd>
+      <dd id="counts">—</dd>
     </div>
     <div id="copyrepos" class="pick" title="复制所有 GitHub 仓库 + 提示词，可直接粘贴给 agent">
       <dt>GitHub 项目</dt>
-      <dd><span id="repoCount">6 个</span><span class="copied-ok">已复制</span></dd>
+      <dd><span id="repoCount">…</span><span class="copied-ok">已复制</span></dd>
     </div>
     <div>
       <dt>浏览器</dt>
-      <dd id="browser">edge</dd>
+      <dd id="browser">—</dd>
     </div>
     <div>
       <dt>桥地址</dt>
-      <dd><code id="wsurl">ws://127.0.0.1:17890/ws</code></dd>
+      <dd><code id="wsurl">—</code></dd>
     </div>
   </dl>
+
+  <section id="batchSec">
+    <div class="sec-head">
+      <span class="sec-title">收藏批次</span>
+      <button id="saveBatch" class="mini-btn">＋ 收藏当前</button>
+    </div>
+    <div id="batchList"></div>
+    <div id="batchEmpty">还没有收藏——点上方「＋ 收藏当前」把这批 GitHub 项目存下来</div>
+  </section>
 
   <div id="err" class="err"></div>
 
@@ -308,9 +280,46 @@
     <button id="reconnect">重新连接</button>
   </footer>
 
-  <script src="popup.js"></script>
-<div class="err show">错误：websocket-error</div></div></div>
-  </div>
-</div>
+  <script>
+// ===== 预览专用 mock：模拟 chrome 扩展 API，逻辑走的都是真实 popup.js =====
+const MOCK_BATCHES = [
+  { id: 2, name: '11-07 10:45', at: Date.now(), repos: [
+      'https://github.com/Fei2411/DS-Bot',
+      'https://github.com/vercel-labs/scriptc',
+      'https://github.com/egoist/mygo',
+      'https://github.com/milind-soni/OpenMausBot',
+      'https://github.com/Niko1221/Strata',
+      'https://github.com/dsh-tauri/deepseek-harness-desktop',
+  ]},
+  { id: 1, name: '11-06 21:30', at: Date.now() - 86400000, repos: [
+      'https://github.com/vercel-labs/scriptc',
+      'https://github.com/module-federation/vite',
+      'https://github.com/ccch1mneyyy/dsh-Go',
+  ]},
+];
+const MOCK_TABS = [
+  // 演示「跳过已开」：这 3 个算已打开
+  { url: 'https://github.com/Fei2411/DS-Bot/releases' },
+  { url: 'https://github.com/vercel-labs/scriptc' },
+  { url: 'https://github.com/egoist/mygo/blob/main/README.md' },
+  { url: 'https://github.com/feed' },
+];
+window.chrome = {
+  runtime: { sendMessage: (msg, cb) => cb({
+    connected: true, wsUrl: 'ws://127.0.0.1:17890/ws', browser: 'edge',
+    tabCount: 15, windowCount: 1, extVersion: '1.0.0'
+  })},
+  storage: { local: {
+    _d: { batches: MOCK_BATCHES },
+    get: async (k) => ({ [k]: window.chrome.storage.local._d[k] }),
+    set: async (o) => Object.assign(window.chrome.storage.local._d, o),
+  }},
+  tabs: {
+    query: async () => MOCK_TABS,
+    create: (o) => { console.log('[mock] 新开标签:', o.url); },
+  },
+};
+</script>
+<script src="extension/popup.js"></script>
 </body>
 </html>

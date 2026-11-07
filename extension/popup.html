@@ -117,6 +117,64 @@
     }
     .pick.copied .copied-ok { display: inline; }
 
+    /* ---- 批次收藏 ---- */
+    #batchSec {
+      padding: 8px 0 2px;
+      border-top: 1px solid var(--line);
+    }
+    .sec-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .sec-title {
+      font-size: 11px;
+      color: var(--faint);
+      letter-spacing: .5px;
+    }
+    .mini-btn {
+      border: 0;
+      background: none;
+      color: var(--muted);
+      font: inherit;
+      font-size: 11.5px;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .mini-btn:hover { color: var(--fg); background: var(--hover); }
+    #batchList {
+      max-height: 126px;   /* 约 3 行，多了滚动 */
+      overflow-y: auto;
+      margin-top: 2px;
+    }
+    .batch-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 4px 6px;
+      margin: 0 -6px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .batch-row:hover { background: var(--hover); }
+    .b-name { font-size: 12px; font-variant-numeric: tabular-nums; }
+    .b-meta { font-size: 10.5px; color: var(--faint); }
+    .batch-row .del {
+      opacity: 0;          /* 悬停才出现，平时安静 */
+      padding: 0 5px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .batch-row:hover .del { opacity: 1; }
+    #batchEmpty {
+      font-size: 11px;
+      color: var(--faint);
+      padding: 6px 0 2px;
+      display: none;
+    }
+
     /* ---- 底部：curl 复制块 + 文字按钮 ---- */
     footer {
       display: flex;
@@ -203,6 +261,15 @@
       <dd><code id="wsurl">—</code></dd>
     </div>
   </dl>
+
+  <section id="batchSec">
+    <div class="sec-head">
+      <span class="sec-title">收藏批次</span>
+      <button id="saveBatch" class="mini-btn">＋ 收藏当前</button>
+    </div>
+    <div id="batchList"></div>
+    <div id="batchEmpty">还没有收藏——点上方「＋ 收藏当前」把这批 GitHub 项目存下来</div>
+  </section>
 
   <div id="err" class="err"></div>
 

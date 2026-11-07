@@ -94,6 +94,88 @@ $('copyrepos').addEventListener('click', async () => {
   } catch { /* 无剪贴板权限时静默 */ }
 });
 
+// ---- 批次收藏：把当前打开的 GitHub 仓库存一批，之后可整批恢复 ----
+const BATCH_KEY = 'batches';
+const MAX_BATCHES = 50;
+
+function batchName(d = new Date()) {
+  const p = (n) => String(n).padStart(2, '0');
+  return p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+
+async function loadBatches() {
+  const o = await chrome.storage.local.get(BATCH_KEY);
+  return Array.isArray(o[BATCH_KEY]) ? o[BATCH_KEY] : [];
+}
+async function saveBatches(list) {
+  await chrome.storage.local.set({ [BATCH_KEY]: list.slice(0, MAX_BATCHES) });
+}
+
+function renderBatches(batches) {
+  const list = $('batchList');
+  const empty = $('batchEmpty');
+  list.textContent = '';
+  empty.style.display = batches.length ? 'none' : 'block';
+
+  for (const b of batches) {
+    const row = document.createElement('div');
+    row.className = 'batch-row';
+    row.title = '点击恢复这批（后台标签打开）';
+
+    const main = document.createElement('div');
+    main.className = 'b-main';
+    const name = document.createElement('div');
+    name.className = 'b-name';
+    name.textContent = b.name;
+    const meta = document.createElement('div');
+    meta.className = 'b-meta';
+    meta.textContent = b.repos.length + ' 个仓库';
+    main.append(name, meta);
+
+    const del = document.createElement('button');
+    del.className = 'mini-btn del';
+    del.textContent = '×';
+    del.title = '删除这批';
+    del.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await saveBatches((await loadBatches()).filter((x) => x.id !== b.id));
+      renderBatches(await loadBatches());
+    });
+
+    row.append(main, del);
+    row.addEventListener('click', async () => {
+      // 已经开着的仓库跳过，不堆重复标签
+      const tabs = await chrome.tabs.query({});
+      const opened = new Set(extractGithubRepos(tabs));
+      const fresh = b.repos.filter((u) => !opened.has(u));
+      for (const url of fresh) chrome.tabs.create({ url, active: false });
+      meta.textContent = !fresh.length
+        ? '全部已开着，没有新开'
+        : fresh.length === b.repos.length
+          ? '已打开 ' + fresh.length + ' 个'
+          : '已打开 ' + fresh.length + ' 个（跳过已开 ' + (b.repos.length - fresh.length) + '）';
+      setTimeout(() => { meta.textContent = b.repos.length + ' 个仓库'; }, 2000);
+    });
+
+    list.appendChild(row);
+  }
+}
+
+$('saveBatch').addEventListener('click', async () => {
+  refreshRepoCount();          // 点的时候现查，保证新鲜
+  const repos = lastRepos;
+  if (!repos.length) return;
+  const all = await loadBatches();
+  // 和最近一批完全相同就不重复收藏
+  if (all[0] && all[0].repos.length === repos.length && all[0].repos.join() === repos.join()) return;
+  all.unshift({ id: Date.now(), name: batchName(), repos, at: Date.now() });
+  await saveBatches(all);
+  renderBatches(await loadBatches());
+  const btn = $('saveBatch');
+  btn.textContent = '已收藏 ✓';
+  setTimeout(() => { btn.textContent = '＋ 收藏当前'; }, 1200);
+});
+
 // 点击 curl 行复制命令（按桥地址自动推导端口）
 $('copyline').addEventListener('click', async () => {
   const ws = $('wsurl').textContent || '';
@@ -112,3 +194,4 @@ $('copyline').addEventListener('click', async () => {
 refresh();
 refreshRepoCount();
 setInterval(refresh, 1500);
+loadBatches().then(renderBatches);

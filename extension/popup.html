@@ -143,6 +143,50 @@
       border-radius: 4px;
     }
     .mini-btn:hover { color: var(--fg); background: var(--hover); }
+    .opt {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-left: auto;
+      margin-right: 8px;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 11.5px;
+      user-select: none;
+    }
+    .opt:hover { color: var(--fg); }
+    .opt input { display: none; }
+    .opt .sw {
+      width: 20px; height: 11px;
+      border-radius: 6px;
+      background: var(--line);
+      position: relative;
+      flex: none;
+      transition: background .15s;
+    }
+    .opt .sw::after {
+      content: '';
+      position: absolute;
+      top: 1.5px; left: 1.5px;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 2px #0004;
+      transition: left .15s;
+    }
+    .opt input:checked + .sw { background: var(--ok); }
+    .opt input:checked + .sw::after { left: 10.5px; }
+
+    /* ---- 细滚动条（批次列表 / 整页溢出共用） ---- */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-thumb {
+      background: var(--line);
+      background-clip: padding-box;
+      border: 2px solid transparent;
+      border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb:hover { background: var(--faint); background-clip: padding-box; }
+    ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
     #batchList {
       max-height: 126px;   /* 约 3 行，多了滚动 */
       overflow-y: auto;
@@ -265,6 +309,10 @@
   <section id="batchSec">
     <div class="sec-head">
       <span class="sec-title">收藏批次</span>
+      <label class="opt" title="收藏后关闭刚收藏的那些标签页">
+        <input type="checkbox" id="closeAfterSave" />
+        <span class="sw"></span>收后关闭
+      </label>
       <button id="saveBatch" class="mini-btn">＋ 收藏当前</button>
     </div>
     <div id="batchList"></div>

@@ -186,6 +186,28 @@ function renderBatches(batches) {
   }
 }
 
+const CLOSE_KEY = 'closeAfterSave';
+chrome.storage.local.get(CLOSE_KEY).then((o) => { $('closeAfterSave').checked = !!o[CLOSE_KEY]; });
+$('closeAfterSave').addEventListener('change', async (e) => {
+  await chrome.storage.local.set({ [CLOSE_KEY]: e.target.checked });
+});
+
+// 收藏后关闭刚收藏的那些标签页（按原始 URL 匹配，同一 URL 的多个标签都关）
+async function closeCollectedTabs(repos) {
+  const keep = new Set(repos);
+  const tabs = await chrome.tabs.query({});
+  const ids = [];
+  for (const t of tabs) {
+    let u;
+    try { u = new URL(t.url); } catch { continue; }
+    const host = u.hostname.toLowerCase();
+    if (host !== 'github.com' && host !== 'www.github.com') continue;
+    if (keep.has('https://github.com' + u.pathname + (u.search || ''))) ids.push(t.id);
+  }
+  if (ids.length) await chrome.tabs.remove(ids);
+  return ids.length;
+}
+
 $('saveBatch').addEventListener('click', async () => {
   refreshRepoCount();          // 点的时候现查，保证新鲜
   const repos = lastPages;     // 存原始 URL，恢复时连子页一起还原
@@ -196,6 +218,8 @@ $('saveBatch').addEventListener('click', async () => {
   all.unshift({ id: Date.now(), name: batchName(), repos, at: Date.now() });
   await saveBatches(all);
   renderBatches(await loadBatches());
+  if ($('closeAfterSave').checked) await closeCollectedTabs(repos);
+  refreshRepoCount();          // 关完刷新计数（开了开关的话会归零）
   const btn = $('saveBatch');
   btn.textContent = '已收藏 ✓';
   setTimeout(() => { btn.textContent = '＋ 收藏当前'; }, 1200);

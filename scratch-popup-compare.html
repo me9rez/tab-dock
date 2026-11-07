@@ -143,6 +143,50 @@
       border-radius: 4px;
     }
     .mini-btn:hover { color: var(--fg); background: var(--hover); }
+    .opt {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-left: auto;
+      margin-right: 8px;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 11.5px;
+      user-select: none;
+    }
+    .opt:hover { color: var(--fg); }
+    .opt input { display: none; }
+    .opt .sw {
+      width: 20px; height: 11px;
+      border-radius: 6px;
+      background: var(--line);
+      position: relative;
+      flex: none;
+      transition: background .15s;
+    }
+    .opt .sw::after {
+      content: '';
+      position: absolute;
+      top: 1.5px; left: 1.5px;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 2px #0004;
+      transition: left .15s;
+    }
+    .opt input:checked + .sw { background: var(--ok); }
+    .opt input:checked + .sw::after { left: 10.5px; }
+
+    /* ---- 细滚动条（批次列表 / 整页溢出共用） ---- */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-thumb {
+      background: var(--line);
+      background-clip: padding-box;
+      border: 2px solid transparent;
+      border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb:hover { background: var(--faint); background-clip: padding-box; }
+    ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
     #batchList {
       max-height: 126px;   /* 约 3 行，多了滚动 */
       overflow-y: auto;
@@ -265,6 +309,10 @@
   <section id="batchSec">
     <div class="sec-head">
       <span class="sec-title">收藏批次</span>
+      <label class="opt" title="收藏后关闭刚收藏的那些标签页">
+        <input type="checkbox" id="closeAfterSave" />
+        <span class="sw"></span>收后关闭
+      </label>
       <button id="saveBatch" class="mini-btn">＋ 收藏当前</button>
     </div>
     <div id="batchList"></div>
@@ -281,41 +329,45 @@
   </footer>
 
   <script>
-// ===== 预览专用 mock：批次现在存原始 URL（含子页），逻辑走真实 popup.js =====
+// ===== 预览 mock：收藏 → 关闭 → 恢复 全闭环可点 =====
 const MOCK_BATCHES = [
-  { id: 2, name: '11-07 10:45', at: Date.now(), repos: [
+  { id: 1, name: '11-07 10:48', at: Date.now(), repos: [
       'https://github.com/Fei2411/DS-Bot/releases',
       'https://github.com/vercel-labs/scriptc/pull/42',
+      'https://github.com/Niko1221/Strata/issues/12',
       'https://github.com/egoist/mygo',
       'https://github.com/milind-soni/OpenMausBot?tab=readme-ov-file',
-      'https://github.com/Niko1221/Strata/issues/12',
       'https://github.com/dsh-tauri/deepseek-harness-desktop',
-  ]},
-  { id: 1, name: '11-06 21:30', at: Date.now() - 86400000, repos: [
-      'https://github.com/vercel-labs/scriptc',
-      'https://github.com/module-federation/vite',
-      'https://github.com/ccch1mneyyy/dsh-Go',
   ]},
 ];
 const MOCK_TABS = [
-  { url: 'https://github.com/Fei2411/DS-Bot/releases' },   // 已开 → 恢复时跳过
-  { url: 'https://github.com/vercel-labs/scriptc' },       // 主页开着，但批次里是 PR #42 → 仍会新开
-  { url: 'https://github.com/egoist/mygo/blob/main/README.md' },
-  { url: 'https://github.com/feed' },
+  { id: 1, url: 'https://github.com/Fei2411/DS-Bot/releases' },
+  { id: 2, url: 'https://github.com/vercel-labs/scriptc/pull/42' },
+  { id: 3, url: 'https://github.com/Niko1221/Strata/issues/12' },
+  { id: 4, url: 'https://github.com/egoist/mygo' },
+  { id: 5, url: 'https://github.com/milind-soni/OpenMausBot?tab=readme-ov-file' },
+  { id: 6, url: 'https://github.com/dsh-tauri/deepseek-harness-desktop' },
+  { id: 7, url: 'https://github.com/feed' },
 ];
 window.chrome = {
   runtime: { sendMessage: (msg, cb) => cb({
     connected: true, wsUrl: 'ws://127.0.0.1:17890/ws', browser: 'edge',
-    tabCount: 15, windowCount: 1, extVersion: '1.0.0'
+    tabCount: 16, windowCount: 1, extVersion: '1.0.0'
   })},
   storage: { local: {
-    _d: { batches: MOCK_BATCHES },
+    _d: { batches: MOCK_BATCHES, closeAfterSave: true },
     get: async (k) => ({ [k]: window.chrome.storage.local._d[k] }),
     set: async (o) => Object.assign(window.chrome.storage.local._d, o),
   }},
   tabs: {
     query: async () => MOCK_TABS,
-    create: (o) => { console.log('[mock] 新开标签:', o.url); },
+    create: (o) => { MOCK_TABS.push({ id: Math.random(), url: o.url }); console.log('[mock] 新开:', o.url); },
+    remove: (ids) => {
+      for (const id of [].concat(ids)) {
+        const i = MOCK_TABS.findIndex((t) => t.id === id);
+        if (i >= 0) { console.log('[mock] 关闭:', MOCK_TABS[i].url); MOCK_TABS.splice(i, 1); }
+      }
+    },
   },
 };
 </script>

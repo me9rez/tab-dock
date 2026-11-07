@@ -73,10 +73,35 @@ function extractGithubRepos(tabs) {
   return [...seen.values()];
 }
 
-let lastRepos = [];
+// 批次收藏用：保留原始 URL（issue/PR/子页一起还原），只去掉 hash、归一域名。
+// 与 extractGithubRepos 的区别：不做仓库级归一去重，恢复 = 还原当时的标签集合
+function extractGithubPages(tabs) {
+  const seen = new Set();
+  const out = [];
+  for (const t of tabs || []) {
+    let u;
+    try { u = new URL(t.url); } catch { continue; }
+    const host = u.hostname.toLowerCase();
+    if (host !== 'github.com' && host !== 'www.github.com') continue;
+    const seg = u.pathname.split('/').filter(Boolean);
+    if (seg.length < 2) continue;
+    const [owner, repo] = seg;
+    if (GH_NON_REPO_OWNER.has(owner.toLowerCase())) continue;
+    if (GH_USER_SUBPAGE.has(repo.toLowerCase())) continue;
+    const key = 'https://github.com' + u.pathname + (u.search || '');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(key);
+  }
+  return out;
+}
+
+let lastRepos = [];   // 归一化仓库列表（给「GitHub 项目」复制行用）
+let lastPages = [];   // 原始页面 URL（给批次收藏用）
 function refreshRepoCount() {
   chrome.tabs.query({}, (tabs) => {
     lastRepos = extractGithubRepos(tabs);
+    lastPages = extractGithubPages(tabs);
     $('repoCount').textContent = lastRepos.length + ' 个';
   });
 }
@@ -94,7 +119,7 @@ $('copyrepos').addEventListener('click', async () => {
   } catch { /* 无剪贴板权限时静默 */ }
 });
 
-// ---- 批次收藏：把当前打开的 GitHub 仓库存一批，之后可整批恢复 ----
+// ---- 批次收藏：把当前打开的 GitHub 页面按原始 URL 存一批，之后整批原样恢复 ----
 const BATCH_KEY = 'batches';
 const MAX_BATCHES = 50;
 
@@ -129,7 +154,7 @@ function renderBatches(batches) {
     name.textContent = b.name;
     const meta = document.createElement('div');
     meta.className = 'b-meta';
-    meta.textContent = b.repos.length + ' 个仓库';
+    meta.textContent = b.repos.length + ' 个页面';
     main.append(name, meta);
 
     const del = document.createElement('button');
@@ -144,9 +169,9 @@ function renderBatches(batches) {
 
     row.append(main, del);
     row.addEventListener('click', async () => {
-      // 已经开着的仓库跳过，不堆重复标签
+      // 按 URL 精确比对：已经开着的页面跳过，不堆重复标签
       const tabs = await chrome.tabs.query({});
-      const opened = new Set(extractGithubRepos(tabs));
+      const opened = new Set(extractGithubPages(tabs));
       const fresh = b.repos.filter((u) => !opened.has(u));
       for (const url of fresh) chrome.tabs.create({ url, active: false });
       meta.textContent = !fresh.length
@@ -154,7 +179,7 @@ function renderBatches(batches) {
         : fresh.length === b.repos.length
           ? '已打开 ' + fresh.length + ' 个'
           : '已打开 ' + fresh.length + ' 个（跳过已开 ' + (b.repos.length - fresh.length) + '）';
-      setTimeout(() => { meta.textContent = b.repos.length + ' 个仓库'; }, 2000);
+      setTimeout(() => { meta.textContent = b.repos.length + ' 个页面'; }, 2000);
     });
 
     list.appendChild(row);
@@ -163,7 +188,7 @@ function renderBatches(batches) {
 
 $('saveBatch').addEventListener('click', async () => {
   refreshRepoCount();          // 点的时候现查，保证新鲜
-  const repos = lastRepos;
+  const repos = lastPages;     // 存原始 URL，恢复时连子页一起还原
   if (!repos.length) return;
   const all = await loadBatches();
   // 和最近一批完全相同就不重复收藏

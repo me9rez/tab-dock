@@ -281,14 +281,14 @@
   </footer>
 
   <script>
-// ===== 预览专用 mock：模拟 chrome 扩展 API，逻辑走的都是真实 popup.js =====
+// ===== 预览专用 mock：批次现在存原始 URL（含子页），逻辑走真实 popup.js =====
 const MOCK_BATCHES = [
   { id: 2, name: '11-07 10:45', at: Date.now(), repos: [
-      'https://github.com/Fei2411/DS-Bot',
-      'https://github.com/vercel-labs/scriptc',
+      'https://github.com/Fei2411/DS-Bot/releases',
+      'https://github.com/vercel-labs/scriptc/pull/42',
       'https://github.com/egoist/mygo',
-      'https://github.com/milind-soni/OpenMausBot',
-      'https://github.com/Niko1221/Strata',
+      'https://github.com/milind-soni/OpenMausBot?tab=readme-ov-file',
+      'https://github.com/Niko1221/Strata/issues/12',
       'https://github.com/dsh-tauri/deepseek-harness-desktop',
   ]},
   { id: 1, name: '11-06 21:30', at: Date.now() - 86400000, repos: [
@@ -298,9 +298,8 @@ const MOCK_BATCHES = [
   ]},
 ];
 const MOCK_TABS = [
-  // 演示「跳过已开」：这 3 个算已打开
-  { url: 'https://github.com/Fei2411/DS-Bot/releases' },
-  { url: 'https://github.com/vercel-labs/scriptc' },
+  { url: 'https://github.com/Fei2411/DS-Bot/releases' },   // 已开 → 恢复时跳过
+  { url: 'https://github.com/vercel-labs/scriptc' },       // 主页开着，但批次里是 PR #42 → 仍会新开
   { url: 'https://github.com/egoist/mygo/blob/main/README.md' },
   { url: 'https://github.com/feed' },
 ];

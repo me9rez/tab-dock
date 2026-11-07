@@ -120,6 +120,13 @@ $('copyrepos').addEventListener('click', async () => {
 });
 
 // ---- 批次收藏：把当前打开的 GitHub 页面按原始 URL 存一批，之后整批原样恢复 ----
+// 内联 SVG 图标（lucide 风格，stroke 走 currentColor）
+const ICONS = {
+  open: '<svg viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>',
+  close: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>',
+  save: '<svg viewBox="0 0 24 24"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/><path d="M12 7v6"/><path d="M9 10h6"/></svg>',
+  check: '<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>',
+};
 const BATCH_KEY = 'batches';
 const MAX_BATCHES = 50;
 
@@ -167,7 +174,7 @@ function renderBatches(batches) {
 
     const openBtn = document.createElement('button');
     openBtn.className = 'mini-btn';
-    openBtn.textContent = '打开';
+    openBtn.innerHTML = ICONS.open + '<span>打开</span>';
     openBtn.title = '整批恢复（后台标签，已开的自动跳过）';
     openBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
@@ -186,7 +193,7 @@ function renderBatches(batches) {
 
     const closeBtn = document.createElement('button');
     closeBtn.className = 'mini-btn';
-    closeBtn.textContent = '关闭';
+    closeBtn.innerHTML = ICONS.close + '<span>关闭</span>';
     closeBtn.title = '关掉当前开着的这批页面（按 URL 匹配）';
     closeBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
@@ -298,8 +305,8 @@ $('saveBatch').addEventListener('click', async () => {
   if ($('closeAfterSave').checked) await closeCollectedTabs(repos);
   refreshRepoCount();          // 关完刷新计数（开了开关的话会归零）
   const btn = $('saveBatch');
-  btn.textContent = '已收藏 ✓';
-  setTimeout(() => { btn.textContent = '＋ 收藏当前'; }, 1200);
+  btn.innerHTML = ICONS.check + '<span>已收藏</span>';
+  setTimeout(() => { btn.innerHTML = ICONS.save + '<span>收藏当前</span>'; }, 1200);
 });
 
 // 点击 curl 行复制命令（按桥地址自动推导端口）

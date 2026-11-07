@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 28px 32px; font: 13px/1.5 system-ui, "Segoe UI", "Microsoft YaHei UI", sans-serif; }
+  h2 { font-size: 13px; font-weight: 600; margin: 0 0 16px; color: #888; }
+  .grid { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
+  .cell { width: 300px; }
+  .cell .tag { font-size: 11px; color: #999; margin: 0 0 6px 2px; }
+  .frame { border: 1px solid #0002; border-radius: 6px; overflow: hidden; }
+  
+    .pv-new {
+      color-scheme: light dark;
+      --bg: #fbfafc;
+      --fg: #1d1b23;
+      --muted: #716d80;
+      --faint: #a5a1b3;
+      --line: #e7e4ee;
+      --code-bg: #f1eff6;
+      --ok: #1f9d61;
+      --bad: #d64545;
+      --hover: #f3f1f8;
+    }
+    .pv-new.dark {
+      .pv-new {
+        --bg: #17161c;
+        --fg: #e9e7f0;
+        --muted: #918da3;
+        --faint: #67637a;
+        --line: #2a2833;
+        --code-bg: #201e28;
+        --ok: #3ecf8e;
+        --bad: #f47174;
+        --hover: #201e28;
+      }
+    }
+    * { box-sizing: border-box; }
+
+    .pv-new {
+      width: 296px;
+      margin: 0;
+      padding: 12px 14px 10px;
+      background: var(--bg);
+      color: var(--fg);
+      font: 13px/1.45 system-ui, "Segoe UI", "Microsoft YaHei UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---- 标题行：状态点 + 名字，右侧连接状态 ---- */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid var(--line);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 12.5px;
+      font-weight: 650;
+      letter-spacing: .1px;
+      color: var(--fg);
+    }
+    #conn {
+      margin-left: auto;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    #conn.on { color: var(--ok); }
+    #conn.off { color: var(--bad); }
+
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      flex: none;
+      background: var(--bad);
+    }
+    .dot.on {
+      background: var(--ok);
+      animation: breathe 2.4s ease-in-out infinite;
+    }
+    @keyframes breathe {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .45; }
+    }
+
+    /* ---- 数据区：纯排版，不用卡片 ---- */
+    dl {
+      margin: 0;
+      padding: 8px 0;
+    }
+    dl > div {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 4.5px 0;
+    }
+    dt { color: var(--muted); font-size: 12px; }
+    dd {
+      margin: 0;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+    dd code {
+      font: 11.5px/1.4 ui-monospace, "Cascadia Mono", Consolas, monospace;
+      color: var(--muted);
+    }
+
+    /* ---- 可点击的行（复制 GitHub 项目） ---- */
+    dl .pick {
+      cursor: pointer;
+      margin: 0 -6px;
+      padding: 4.5px 6px;
+      border-radius: 5px;
+    }
+    dl .pick:hover { background: var(--hover); }
+    .copied-ok {
+      display: none;
+      font-size: 10.5px;
+      color: var(--ok);
+      margin-left: 6px;
+    }
+    .pick.copied .copied-ok { display: inline; }
+
+    /* ---- 底部：curl 复制块 + 文字按钮 ---- */
+    footer {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-top: 9px;
+      border-top: 1px solid var(--line);
+    }
+    #copyline {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px;
+      background: var(--code-bg);
+      border-radius: 5px;
+      cursor: pointer;
+      user-select: none;
+    }
+    #copyline:hover { filter: brightness(.97); }
+    .pv-new.dark { #copyline:hover { filter: brightness(1.18); } }
+    #copyline .prompt { color: var(--faint); font: 11.5px ui-monospace, Consolas, monospace; flex: none; }
+    #cmd {
+      font: 11.5px/1.4 ui-monospace, "Cascadia Mono", Consolas, monospace;
+      color: var(--fg);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #copyline .done {
+      flex: none;
+      font-size: 10.5px;
+      color: var(--ok);
+      display: none;
+    }
+    #copyline.copied .done { display: inline; }
+
+    #reconnect {
+      flex: none;
+      padding: 5px 4px;
+      border: 0;
+      background: none;
+      color: var(--muted);
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    #reconnect:hover { color: var(--fg); background: var(--hover); }
+
+    .err {
+      color: var(--bad);
+      font-size: 11.5px;
+      padding-top: 6px;
+      word-break: break-all;
+      display: none;
+    }
+    .err.show { display: block; }
+  
+</style>
+</head>
+<body>
+<h2>TabBridge popup — 新版（含「GitHub 项目」一键复制行）</h2>
+<div class="grid">
+  <div class="cell">
+    <div class="tag">亮色 · 已连接（「GitHub 项目 6 个」整行可点复制）</div>
+    <div class="frame"><div class="pv-new light">
+  <header>
+    <span id="dot" class="dot on"></span>
+    <h1>TabBridge</h1>
+    <span id="conn">已连接</span>
+  </header>
+
+  <dl>
+    <div>
+      <dt>标签页 / 窗口</dt>
+      <dd id="counts">15 / 1</dd>
+    </div>
+    <div id="copyrepos" class="pick" title="复制所有 GitHub 仓库 + 提示词，可直接粘贴给 agent">
+      <dt>GitHub 项目</dt>
+      <dd><span id="repoCount">6 个</span><span class="copied-ok">已复制</span></dd>
+    </div>
+    <div>
+      <dt>浏览器</dt>
+      <dd id="browser">edge</dd>
+    </div>
+    <div>
+      <dt>桥地址</dt>
+      <dd><code id="wsurl">ws://127.0.0.1:17890/ws</code></dd>
+    </div>
+  </dl>
+
+  <div id="err" class="err"></div>
+
+  <footer>
+    <span id="copyline" title="点击复制">
+      <span class="prompt">$</span><span id="cmd">curl 127.0.0.1:17890/tabs</span><span class="done">已复制</span>
+    </span>
+    <button id="reconnect">重新连接</button>
+  </footer>
+
+  <script src="popup.js"></script>
+</div></div>
+  </div>
+  <div class="cell">
+    <div class="tag">暗色 · 已连接</div>
+    <div class="frame"><div class="pv-new dark">
+  <header>
+    <span id="dot" class="dot on"></span>
+    <h1>TabBridge</h1>
+    <span id="conn">已连接</span>
+  </header>
+
+  <dl>
+    <div>
+      <dt>标签页 / 窗口</dt>
+      <dd id="counts">15 / 1</dd>
+    </div>
+    <div id="copyrepos" class="pick" title="复制所有 GitHub 仓库 + 提示词，可直接粘贴给 agent">
+      <dt>GitHub 项目</dt>
+      <dd><span id="repoCount">6 个</span><span class="copied-ok">已复制</span></dd>
+    </div>
+    <div>
+      <dt>浏览器</dt>
+      <dd id="browser">edge</dd>
+    </div>
+    <div>
+      <dt>桥地址</dt>
+      <dd><code id="wsurl">ws://127.0.0.1:17890/ws</code></dd>
+    </div>
+  </dl>
+
+  <div id="err" class="err"></div>
+
+  <footer>
+    <span id="copyline" title="点击复制">
+      <span class="prompt">$</span><span id="cmd">curl 127.0.0.1:17890/tabs</span><span class="done">已复制</span>
+    </span>
+    <button id="reconnect">重新连接</button>
+  </footer>
+
+  <script src="popup.js"></script>
+</div></div>
+  </div>
+  <div class="cell">
+    <div class="tag">暗色 · 未连接（GitHub 行照常可用，数据来自浏览器本身）</div>
+    <div class="frame"><div class="pv-new dark">
+  <header>
+    <span id="dot" class="dot"></span>
+    <h1>TabBridge</h1>
+    <span id="conn">未连接</span>
+  </header>
+
+  <dl>
+    <div>
+      <dt>标签页 / 窗口</dt>
+      <dd id="counts">15 / 1</dd>
+    </div>
+    <div id="copyrepos" class="pick" title="复制所有 GitHub 仓库 + 提示词，可直接粘贴给 agent">
+      <dt>GitHub 项目</dt>
+      <dd><span id="repoCount">6 个</span><span class="copied-ok">已复制</span></dd>
+    </div>
+    <div>
+      <dt>浏览器</dt>
+      <dd id="browser">edge</dd>
+    </div>
+    <div>
+      <dt>桥地址</dt>
+      <dd><code id="wsurl">ws://127.0.0.1:17890/ws</code></dd>
+    </div>
+  </dl>
+
+  <div id="err" class="err"></div>
+
+  <footer>
+    <span id="copyline" title="点击复制">
+      <span class="prompt">$</span><span id="cmd">curl 127.0.0.1:17890/tabs</span><span class="done">已复制</span>
+    </span>
+    <button id="reconnect">重新连接</button>
+  </footer>
+
+  <script src="popup.js"></script>
+<div class="err show">错误：websocket-error</div></div></div>
+  </div>
+</div>
+</body>
+</html>

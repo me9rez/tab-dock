@@ -144,8 +144,16 @@ function renderBatches(batches) {
 
   for (const b of batches) {
     const row = document.createElement('div');
-    row.className = 'batch-row';
-    row.title = '点击恢复这批（后台标签打开）';
+    row.className = 'batch-row' + (expandedIds.has(b.id) ? ' open' : '');
+
+    // ---- 行头：展开/收起 + 打开 + 删除 ----
+    const head = document.createElement('div');
+    head.className = 'b-head';
+    head.title = '点开展开这批的页面清单';
+
+    const caret = document.createElement('span');
+    caret.className = 'caret';
+    caret.textContent = '▸';
 
     const main = document.createElement('div');
     main.className = 'b-main';
@@ -157,18 +165,12 @@ function renderBatches(batches) {
     meta.textContent = b.repos.length + ' 个页面';
     main.append(name, meta);
 
-    const del = document.createElement('button');
-    del.className = 'mini-btn del';
-    del.textContent = '×';
-    del.title = '删除这批';
-    del.addEventListener('click', async (e) => {
+    const openBtn = document.createElement('button');
+    openBtn.className = 'mini-btn';
+    openBtn.textContent = '打开';
+    openBtn.title = '整批恢复（后台标签，已开的自动跳过）';
+    openBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      await saveBatches((await loadBatches()).filter((x) => x.id !== b.id));
-      renderBatches(await loadBatches());
-    });
-
-    row.append(main, del);
-    row.addEventListener('click', async () => {
       // 按 URL 精确比对：已经开着的页面跳过，不堆重复标签
       const tabs = await chrome.tabs.query({});
       const opened = new Set(extractGithubPages(tabs));
@@ -182,9 +184,63 @@ function renderBatches(batches) {
       setTimeout(() => { meta.textContent = b.repos.length + ' 个页面'; }, 2000);
     });
 
+    const del = document.createElement('button');
+    del.className = 'mini-btn del';
+    del.textContent = '×';
+    del.title = '删除这批';
+    let armed = false, armTimer = null;
+    del.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!armed) {           // 第一次点：进入待确认态，3 秒内再点才真删
+        armed = true;
+        del.textContent = '确认删除';
+        del.classList.add('danger');
+        armTimer = setTimeout(() => {
+          armed = false;
+          del.textContent = '×';
+          del.classList.remove('danger');
+        }, 3000);
+        return;
+      }
+      clearTimeout(armTimer);
+      await saveBatches((await loadBatches()).filter((x) => x.id !== b.id));
+      renderBatches(await loadBatches());
+    });
+
+    head.addEventListener('click', () => {
+      if (expandedIds.has(b.id)) expandedIds.delete(b.id);
+      else expandedIds.add(b.id);
+      row.classList.toggle('open');
+    });
+    head.append(caret, main, openBtn, del);
+
+    // ---- 展开的页面清单：每条可单独打开 ----
+    const pages = document.createElement('div');
+    pages.className = 'page-list';
+    for (const url of b.repos) {
+      const item = document.createElement('div');
+      item.className = 'page-item';
+      item.title = url + '（点击打开）';
+      const repo = document.createElement('span');
+      repo.className = 'pi-repo';
+      const rest = url.replace('https://github.com/', '');
+      const slash = rest.indexOf('/');
+      repo.textContent = slash > 0 ? rest.slice(0, slash) : rest;
+      item.appendChild(repo);
+      item.appendChild(document.createTextNode(slash > 0 ? rest.slice(slash) : ''));
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        chrome.tabs.create({ url, active: false });
+      });
+      pages.appendChild(item);
+    }
+
+    row.append(head, pages);
     list.appendChild(row);
   }
 }
+
+const expandedIds = new Set();   // 展开状态只在 popup 打开期间记忆
 
 const CLOSE_KEY = 'closeAfterSave';
 chrome.storage.local.get(CLOSE_KEY).then((o) => { $('closeAfterSave').checked = !!o[CLOSE_KEY]; });

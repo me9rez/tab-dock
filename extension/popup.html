@@ -31,9 +31,9 @@
     * { box-sizing: border-box; }
 
     body {
-      width: 296px;
+      width: 360px;
       margin: 0;
-      padding: 12px 14px 10px;
+      padding: 14px 16px 12px;
       background: var(--bg);
       color: var(--fg);
       font: 13px/1.45 system-ui, "Segoe UI", "Microsoft YaHei UI", sans-serif;
@@ -81,14 +81,14 @@
     /* ---- 数据区：纯排版，不用卡片 ---- */
     dl {
       margin: 0;
-      padding: 8px 0;
+      padding: 9px 0;
     }
     dl > div {
       display: flex;
       align-items: baseline;
       justify-content: space-between;
       gap: 12px;
-      padding: 4.5px 0;
+      padding: 5.5px 0;
     }
     dt { color: var(--muted); font-size: 12px; }
     dd {
@@ -188,30 +188,56 @@
     ::-webkit-scrollbar-thumb:hover { background: var(--faint); background-clip: padding-box; }
     ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
     #batchList {
-      max-height: 126px;   /* 约 3 行，多了滚动 */
+      max-height: 216px;   /* 约 4 行，多了滚动 */
       overflow-y: auto;
       margin-top: 2px;
     }
     .batch-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      padding: 4px 6px;
+      padding: 5px 6px;
       margin: 0 -6px;
       border-radius: 5px;
-      cursor: pointer;
     }
     .batch-row:hover { background: var(--hover); }
-    .b-name { font-size: 12px; font-variant-numeric: tabular-nums; }
-    .b-meta { font-size: 10.5px; color: var(--faint); }
-    .batch-row .del {
-      opacity: 0;          /* 悬停才出现，平时安静 */
-      padding: 0 5px;
-      font-size: 13px;
-      line-height: 1.4;
+    .b-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
     }
+    .caret {
+      flex: none;
+      font-size: 10px;
+      color: var(--faint);
+      width: 10px;
+      transition: transform .15s;
+    }
+    .batch-row.open .caret { transform: rotate(90deg); }
+    .b-main { flex: 1; min-width: 0; }
+    .b-name { font-size: 12.5px; font-variant-numeric: tabular-nums; }
+    .b-meta { font-size: 10.5px; color: var(--faint); }
+    .batch-row .mini-btn { flex: none; }
+    .batch-row .del { opacity: 0; font-size: 13px; line-height: 1.4; padding: 2px 5px; }
     .batch-row:hover .del { opacity: 1; }
+    .mini-btn.danger { color: var(--bad); }
+    .mini-btn.danger:hover { color: var(--bad); background: var(--hover); }
+    .page-list {
+      display: none;
+      margin: 4px 0 2px 24px;   /* 与批次名对齐 */
+    }
+    .batch-row.open .page-list { display: block; }
+    .page-item {
+      font: 11px/1.5 ui-monospace, "Cascadia Mono", Consolas, monospace;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 2px 6px;
+      margin: 0 -6px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .page-item:hover { color: var(--fg); background: var(--code-bg); }
+    .page-item .pi-repo { color: var(--fg); }
     #batchEmpty {
       font-size: 11px;
       color: var(--faint);

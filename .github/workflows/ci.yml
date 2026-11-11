@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 语法检查
+        run: |
+          for f in bridge/*.mjs extension/*.js test/*.mjs; do
+            node --check "$f"
+          done
+      - name: 端到端自测（30 项）
+        run: node test/selftest.mjs

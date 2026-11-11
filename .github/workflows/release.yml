@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 校验 tag 与 manifest 版本一致
+        run: |
+          VER="v$(node -p "require('./extension/manifest.json').version")"
+          if [ "$VER" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME 与 manifest 版本 $VER 不一致"
+            exit 1
+          fi
+          echo "版本: $VER"
+
+      - name: 语法检查
+        run: |
+          for f in bridge/*.mjs extension/*.js test/*.mjs; do
+            node --check "$f"
+          done
+
+      - name: 端到端自测
+        run: node test/selftest.mjs
+
+      - name: 打包扩展（解压即可加载）
+        run: |
+          cd extension
+          zip -r "../tab-dock-extension-${GITHUB_REF_NAME}.zip" .
+          cd ..
+          sha256sum "tab-dock-extension-${GITHUB_REF_NAME}.zip" > SHA256SUMS.txt
+          unzip -l "tab-dock-extension-${GITHUB_REF_NAME}.zip" | head -8
+
+      - name: 发布 Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            "tab-dock-extension-${GITHUB_REF_NAME}.zip" \
+            "SHA256SUMS.txt" \
+            --title "TabDock $GITHUB_REF_NAME" \
+            --verify-tag \
+            --generate-notes

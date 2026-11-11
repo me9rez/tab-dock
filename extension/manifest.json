@@ -1,9 +1,13 @@
 {
   "manifest_version": 3,
   "name": "TabDock",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "标签页的码头：把标签页桥接给本地 agent（HTTP 读取/控制），GitHub 仓库可成批收藏、一键恢复或关闭。",
-  "permissions": ["tabs", "storage", "alarms"],
+  "permissions": [
+    "tabs",
+    "storage",
+    "alarms"
+  ],
   "background": {
     "service_worker": "background.js"
   },

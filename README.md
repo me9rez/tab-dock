@@ -1,14 +1,20 @@
 # TabDock
 
-标签页的码头。两条主线：
+[![CI](https://github.com/me9rez/tab-dock/actions/workflows/ci.yml/badge.svg)](https://github.com/me9rez/tab-dock/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+![Platform](https://img.shields.io/badge/platform-Chrome%20%7C%20Edge-lightgrey)
 
-1. **标签页桥**：浏览器扩展收集标签页快照，本机桥出 HTTP 接口——本地 agent 一条 `curl` 就能读取/控制浏览器标签页；
-2. **GitHub 批次收藏**：打开的 GitHub 仓库/子页可成批「停靠」（保存原始 URL），之后一键整批「启航」（恢复成标签页）、看完一键关闭，收后还可自动清空工作区。
+**标签页的码头。** 一个浏览器扩展 + 本地桥的组合，做两件事：
+
+1. **标签页桥** —— 把浏览器标签页实时暴露给本地 agent：扩展负责收集，本机桥负责出 HTTP 接口，agent 一条 `curl` 就能读取/控制标签页；
+2. **GitHub 批次收藏** —— 看不完的 GitHub 仓库/子页成批「停靠」保存，之后一键整批「启航」恢复、看完一键关闭。
+
+> English: a browser extension + zero-dependency Node bridge that exposes your open tabs to local agents over plain HTTP, plus batch bookmarking for GitHub repos you don't have time to read right now — dock them, restore them later, close them in one click.
 
 ```
 ┌─────────────┐   WebSocket    ┌──────────────────┐   HTTP    ┌──────────────┐
 │  浏览器扩展  │ ─────────────▶ │   本地桥 (Node)  │ ◀──────── │  agent / CLI │
-│  (Chrome/   │  推送 JSON 快照 │ 127.0.0.1:17890  │  GET/POST │  curl / 程序 │
+│  (Chrome/   │  推送 JSON 快照 │  127.0.0.1:17890 │  GET/POST │  curl / 程序 │
 │   Edge)     │ ◀───────────── │                  │           │              │
 └─────────────┘   下发命令      └──────────────────┘           └──────────────┘
 ```
@@ -19,17 +25,45 @@ CDP 调试端口）都要有一个本地进程。桥做这一层，同时让浏�
 
 ---
 
-## 安装（一次就好）
+## 功能
+
+### 标签页桥
+
+- 扩展（MV3）主动连桥推送全量快照，节流 120ms，浏览器侧**零配置**
+- `GET /tabs` 一条 curl 读全部标签页，支持 URL / 标题 / 正则 / 窗口 / 活动状态等过滤
+- 反向控制：`activate` / `close` / `mute` / `pin` / `reload`
+- SSE 实时事件流（`/events`），`watch` 子命令实时打印变化
+- `/health` 带心跳判定：能区分「桥活着」和「扩展活着」（MV3 service worker 会被浏览器回收）
+
+### GitHub 批次收藏（扩展 popup）
+
+- 一键把当前打开的 GitHub 页面按**原始 URL** 存成一批——issue、PR、子页原样保留
+- 整批恢复：后台标签打开，**自动跳过已开着的页面**，不堆重复标签
+- 整批关闭：看完一批一键清掉（严格按 URL 匹配，不碰批次外的标签）
+- 「收后关闭」开关：收藏完自动清空工作区
+- 每批可展开页面清单、单条打开；删除有二次确认
+- 数据存 `chrome.storage.local`（最多 50 批），重启浏览器都在；popup 不依赖桥，桥挂了收藏照常可用
+
+### 安全模型
+
+- 桥只绑 `127.0.0.1`，不监听外部网卡
+- **不返回 CORS 头**：网页 JS 读不到响应（防恶意页面偷标签页）
+- **写请求 CSRF 防护**：CORS 拦不住副作用，所以非 GET 请求校验 `Sec-Fetch-Site` / `Origin`，
+  恶意网页用 `<form method=POST>` 盲打会被 403（自测里有 4 条钉住这个行为）
+- 需要额外一层就启用 token：`TABBRIDGE_TOKEN=mysecret node bridge/server.mjs`
+
+---
+
+## 安装
 
 ### 1. 装扩展
 
-Chrome：打开 `chrome://extensions`
-Edge：打开 `edge://extensions`
+Chrome：打开 `chrome://extensions` · Edge：打开 `edge://extensions`
 
 1. 打开右上角 **开发者模式**
 2. 点 **加载已解压的扩展程序**
-3. 选这个目录：`<本仓库>/extension`
-4. 装好后工具栏会出现紫色图标
+3. 选本仓库的 `extension/` 目录（或从 Release 下载 zip 解压后选它）
+4. 装好后工具栏会出现图标，点开可看连接状态
 
 ### 2. 启动桥
 
@@ -37,82 +71,69 @@ Edge：打开 `edge://extensions`
 node bridge/server.mjs
 ```
 
-看到 `TabDock 桥已启动 http://127.0.0.1:17890` 就算成功。扩展会自动连上来
-（图标点开可以看到「已连接」）。
+看到 `TabDock 桥已启动 http://127.0.0.1:17890` 就算成功，扩展会自动连上来。
 
-想让它开机自启：以管理员 PowerShell 跑
+### 3.（可选，Windows）开机自启
 
 ```powershell
 pwsh -File scripts/install-bridge-task.ps1
 ```
 
-几个行为要知道：
-
-- **无窗口**：任务不直接跑 `node.exe`，而是用 `wscript.exe` 调 `scripts/start-bridge-hidden.vbs`。
-  node 是控制台子系统程序，计划任务直接启动它必然弹一个黑窗口。wscript 是 GUI 子系统，
-  `sh.Run(cmd, 0, True)` 隐藏启动并同步等待，所以任务状态仍是 Running、进程树也归任务管
-  （停止任务能整树结束）。
-- **任务在任务计划程序里正常可见**：不要加 `New-ScheduledTaskSettingsSet -Hidden`。
-  那个参数会把任务归入"隐藏任务"（默认列表看不见，要勾"显示隐藏的任务"），而它**并不能**
-  隐藏 node 的控制台窗口——窗口问题是靠上面的 wscript 解决的，两件事互不相关。
-  任务路径 `\`、名称 `TabBridge`（**沿用历史部署标识，未随产品改名**，避免与已有任务冲突），直接搜名字就能找到。
-- 触发器是 **AtLogOn（登录时）+ 每 5 分钟兜底重复**：桥常驻时重复触发被
-  `MultipleInstances=IgnoreNew` 忽略；万一 node 崩了且失败重启（3 次）用尽，
-  最多 5 分钟内被重新拉起，不用等下次登录
-- 脚本会**解析到真实的 node.exe**（不用 mise 的 shim，因为本机火绒曾反复终止 mise.exe 导致 shim 静默失效）
-- node 升级到新的版本目录后，**重跑一次脚本**刷新任务里的路径
-- 重装是幂等的：会自动清理占用端口的旧桥进程，不会出现"端口被占 → 返回码 1"
+- 计划任务 `TabBridge`：AtLogOn 触发 + **每 5 分钟兜底重复**（桥常驻时被
+  `MultipleInstances=IgnoreNew` 忽略；万一 node 崩了且失败重启用尽，最多 5 分钟拉起）
+- 经 `wscript.exe` 调 VBS 隐藏启动，无黑窗口，任务在任务计划程序里正常可见
+- 会解析到真实的 `node.exe`（不用 mise shim），node 升级后重跑一次即可
 - 卸载：`pwsh -File scripts/install-bridge-task.ps1 -Uninstall`
 
-验证任务状态与「确实没窗口」：
+### 4.（可选）token
 
-```powershell
-Get-ScheduledTask -TaskName TabBridge | Select-Object State
-Get-ScheduledTaskInfo -TaskName TabBridge | Select-Object LastTaskResult   # 267009 = 正在运行
-# 进程树应为 wscript.exe → node.exe；node 的 MainWindowHandle 应为 0
-Get-Process node | Where-Object { $_.Id -eq (Get-NetTCPConnection -State Listen -LocalPort 17890).OwningProcess } |
-    Select-Object Id, MainWindowHandle, MainWindowTitle
+```bash
+TABBRIDGE_TOKEN=mysecret node bridge/server.mjs
+curl -H "X-TabBridge-Token: mysecret" 127.0.0.1:17890/tabs
 ```
+
+> 注：`TABBRIDGE_*` 环境变量与 `X-TabBridge-Token` 头沿用历史命名，保持兼容。
 
 ---
 
 ## agent 怎么用
 
-最省事的就是 curl：
+最省事就是 curl：
 
 ```bash
 # 所有标签页
 curl -s 127.0.0.1:17890/tabs | jq -r '.tabs[] | "\(.id)\t\(.title)\t\(.url)"'
 
 # 每个窗口当前活动的那一个
-curl -s 127.0.0.1:17890/active | jq -r '.active[] | .title + " → " + .url'
+curl -s 127.0.0.1:17890/active
 
-# 找开着 GitHub 的标签
-curl -s "127.0.0.1:17890/tabs?url=github" | jq -r '.tabs[].title'
+# 找开着 GitHub 的标签（高频轮询加 &cached=1 直读缓存，~9ms）
+curl -s "127.0.0.1:17890/tabs?url=github&cached=1"
+
+# 控制标签页
+curl -s -X POST 127.0.0.1:17890/tabs/<id>/activate
+curl -s -X POST 127.0.0.1:17890/tabs/<id>/close
 ```
 
 给人看的封装：
 
 ```bash
-node bridge/cli.mjs tabs          # 对齐的表格
+node bridge/cli.mjs health
 node bridge/cli.mjs tabs --url github --active
-node bridge/cli.mjs active
-node bridge/cli.mjs watch         # 订阅变化，实时打印
+node bridge/cli.mjs watch        # 订阅变化，实时打印
 node bridge/cli.mjs activate 12345
 ```
-
-在 Hermes / 任何 agent 里，等同一条命令或多个 HTTP 请求即可。
 
 ---
 
 ## HTTP API
 
-基地址 `http://127.0.0.1:17890`（只绑回环，外部机器访问不到）。
+基地址 `http://127.0.0.1:17890`（只绑回环）。
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | GET | `/health` | 桥与扩展状态、快照年龄 |
-| GET | `/tabs` | 全部标签页（支持过滤；`?cached=1` 直接读缓存不催刷新，高频轮询用） |
+| GET | `/tabs` | 全部标签页（可过滤；`?cached=1` 直读缓存） |
 | GET | `/windows` | 窗口列表，每个窗口内嵌自己的标签 |
 | GET | `/active` | 每个窗口当前活动的标签 |
 | GET | `/events` | SSE 事件流（连接/断开/快照变化） |
@@ -123,71 +144,55 @@ node bridge/cli.mjs activate 12345
 | POST | `/tabs/:id/pin?pinned=1` | 固定 / 取消固定 |
 | POST | `/tabs/:id/reload` | 刷新页面 |
 
-### `/tabs` 过滤参数
-
-| 参数 | 例 | 说明 |
-|---|---|---|
-| `active=1` | | 只要活动标签 |
-| `pinned=1` / `pinned=0` | | 按固定状态筛选 |
-| `audible=1` | | 只要正在发声的（能找到谁在放音频） |
-| `windowId=123` | | 指定窗口 |
-| `url=github` | | URL 子串，不区分大小写 |
-| `urlRe=github\.com/[^/]+$` | | URL 正则 |
-| `title=水晶` | | 标题子串（中文可用） |
-| `limit=10` | | 截断 |
-| `fields=id,title,url` | | 只要这几个字段，减小载荷 |
-
-### 单个标签的字段
-
-```json
-{
-  "id": 1354890537,
-  "windowId": 1354890536,
-  "index": 2,
-  "title": "Example Domains",
-  "url": "https://www.iana.org/help/example-domains",
-  "active": true,
-  "highlighted": true,
-  "pinned": false,
-  "audible": false,
-  "muted": false,
-  "groupId": -1,
-  "status": "complete",
-  "discarded": false,
-  "incognito": false,
-  "favIconUrl": "https://www.iana.org/_img/bookmark_icon-32.png",
-  "lastAccessed": 1792813691000,
-  "openerTabId": 1354890535
-}
-```
-
-### `/health` 的两个状态字段
-
-- `connected`：WebSocket 通不通
-- `extensionAlive`：最近 60 秒有没有心跳。MV3 的 service worker 会被浏览器回收，
-  这个字段能区分「扩展还活着」和「进程在但扩展卡住」
-- `stale`：等于 `!extensionAlive`，表示数据不可信
-
-`/tabs` 每次请求会顺手催扩展刷新一次（最多等 600ms），所以直接读就是最新的；
-扩展掉线时退化为返回缓存。
+`/tabs` 过滤参数：`active` `pinned` `audible` `windowId` `url`（子串）`urlRe`（正则）`title` `limit` `fields`（精简字段）`cached`。
 
 ---
 
-## 安全
+## 项目结构
 
-- 桥只绑 `127.0.0.1`，不监听外部网卡
-- **不返回 CORS 头**：网页里的 JS 读不到响应（防恶意页面偷标签页），
-  但 curl / 本机程序（agent）不受 CORS 限制
-- **写请求有 CSRF 防护**：CORS 头拦不住"读"，但拦得住"读不到响应"——拦不住的
-  是恶意网页用 `<form method=POST>` 盲打写接口。所以桥对非 GET 请求校验
-  `Sec-Fetch-Site`（cross-site / same-site 拒绝）和 `Origin`（必须为空或本服务
-  自身），curl / agent / 地址栏导航不带这些标记，不受影响。自测里有 4 条钉住这个行为
-- 需要额外一层保护就启用 token：
+```
+extension/              MV3 扩展（manifest + service worker + popup + 图标）
+bridge/server.mjs       本地桥（HTTP API + WebSocket 服务端，零依赖）
+bridge/cli.mjs          命令行封装
+scripts/                Windows 开机自启的安装/卸载脚本
+test/selftest.mjs       30 项端到端自测（用假扩展模拟 WS 客户端，不需要真浏览器）
+tools/make-icons.py     图标生成（纯标准库写 PNG）
+.github/workflows/      CI（自测）与 Release（tag 自动打包）
+```
+
+---
+
+## 开发
 
 ```bash
-TABBRIDGE_TOKEN=mysecret node bridge/server.mjs
-curl -H "X-TabBridge-Token: mysecret" 127.0.0.1:17890/tabs
+node test/selftest.mjs      # 30 项端到端自测（含 4 条 CSRF 用例）
+python tools/make-icons.py  # 重新生成图标
 ```
+
+桥零依赖，只用 `node:http` / `node:crypto`，WebSocket 服务端是内置实现
+（握手、掩码、分片、ping/pong 已覆盖；强制客户端掩码、单帧 8MB 上限）。
+扩展是 MV3，无构建步骤，改完在扩展页点刷新即可。
+
+### 发版
+
+```bash
+# 1. bump extension/manifest.json 的 version
+# 2. 提交并推 main
+git push origin main
+# 3. 单独推 tag（Release workflow 校验 tag 必须等于 manifest 版本）
+git tag v1.x.y && git push origin v1.x.y
+```
+
+Release 会自动附带 `tab-dock-extension-v*.zip`（manifest 在 zip 根，解压即可加载）与 `SHA256SUMS.txt`。
+
+### 已知坑：自动化加载扩展
+
+Chromium 137+（实测 Edge 155 / Chrome 156）**已禁用命令行 `--load-extension`**，传了也静默忽略。两个办法：
+
+- 正常安装：走 `chrome://extensions` / `edge://extensions` 的「加载已解压」；
+- 自动化（CI/测试）：`--enable-unsafe-extension-debugging` + 通过 CDP 调 `Extensions.loadUnpacked`。
+  headless 模式下扩展的 service worker 不会启动，要验证必须用有头模式
+  （可以把窗口用 `--window-position=-2400,-2400` 挪到屏幕外）。
 
 ---
 
@@ -200,36 +205,8 @@ curl -H "X-TabBridge-Token: mysecret" 127.0.0.1:17890/tabs
 | `stale: true` 但 `connected: true` | 扩展的 service worker 被回收了，点一下扩展图标或等 1 分钟自动恢复 |
 | 端口被占 | `node bridge/server.mjs --port 17891`，同时改 `extension/background.js` 里的 `DEFAULT_WS` |
 | 扩展装不上，提示 manifest 错误 | 确认选的是 `extension` 目录本身（不是它的父目录） |
+| 扩展错误页有 `ERR_CONNECTION_REFUSED` | 桥重启窗口期的正常现象，指数退避会自动重连；只有 `connected: false` 持续数分钟才算真挂 |
 
-### 已知坑：自动化加载扩展
+## License
 
-Chromium 137+（实测 Edge 155 / Chrome 156）**已禁用命令行 `--load-extension`**，
-传了也静默忽略，扩展不会加载。两个办法：
-
-- 正常安装：走 `chrome://extensions` / `edge://extensions` 的「加载已解压」；
-- 自动化（CI/测试）：`--enable-unsafe-extension-debugging` + 通过 CDP 调
-  `Extensions.loadUnpacked`。headless 模式下扩展的 service worker 不会启动，
-  要验证必须用有头模式（可以把窗口用 `--window-position=-2400,-2400` 挪到屏幕外）。
-
----
-
-## 开发
-
-```bash
-node test/selftest.mjs      # 30 项端到端自测（用假扩展，不需要真浏览器；含 4 条 CSRF 用例）
-python tools/make-icons.py  # 重新生成图标
-```
-
-桥零依赖，只用 `node:http` / `node:crypto`，WebSocket 服务端是内置实现
-（握手、掩码、分片、ping/pong 都已覆盖）。扩展是 MV3，无构建步骤，改完在扩展页点刷新即可。
-
-## 目录
-
-```
-extension/          MV3 扩展（manifest + service worker + popup + 图标）
-bridge/server.mjs   本地桥（HTTP API + WebSocket 服务端）
-bridge/cli.mjs      命令行封装
-scripts/            开机自启的安装/卸载脚本
-test/selftest.mjs   端到端自测
-tools/make-icons.py 图标生成
-```
+[MIT](LICENSE)

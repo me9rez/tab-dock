@@ -57,6 +57,22 @@ catch {
     Write-Host "解析真实 node 路径失败，退回 shim：$nodeCmd" -ForegroundColor Yellow
 }
 
+# 兜底：shim 依赖 mise.exe（本机火绒会随机终止它，解析时好时坏）。
+# 直接扫 mise installs 的版本目录取最新版 node.exe，不执行任何 mise 组件。
+if ($node -like '*shims*') {
+    $miseDir = Join-Path $env:LOCALAPPDATA 'mise\installs\node'
+    if (Test-Path $miseDir) {
+        $cand = Get-ChildItem $miseDir -Directory |
+            Where-Object { $_.Name -match '^\d+\.\d+\.\d+$' } |
+            Sort-Object { [version]$_.Name } -Descending |
+            Select-Object -First 1
+        if ($cand -and (Test-Path (Join-Path $cand.FullName 'node.exe'))) {
+            $node = Join-Path $cand.FullName 'node.exe'
+            Write-Host "shim 解析失败，已从 mise installs 目录取到：$node" -ForegroundColor Yellow
+        }
+    }
+}
+
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $server = Join-Path $repoRoot 'bridge\server.mjs'
 if (-not (Test-Path $server)) { throw "找不到桥脚本：$server" }
